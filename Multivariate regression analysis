@@ -1,0 +1,205 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using MatrixLib;
+namespace LabWork
+{
+    class BVRegres
+    {
+        public static Kvantils kvantil = new Kvantils();
+        public static double[,] Xmatix(List<List<double>> vibirka)
+        {
+            double[,] X = new double[vibirka[0].Count, vibirka.Count - 1];
+            for (int i = 0; i < vibirka[0].Count; i++)
+                for (int j = 0; j < vibirka.Count - 1; j++)
+                    X[i, j] = vibirka[j][i];
+            return X;
+        }
+        public static double[] OtsVectorA(List<List<double>> vibirka)
+        {
+            double[,] vector = new double[vibirka.Count - 1, 1], Y = new double[vibirka[0].Count, 1],
+             X = Xmatix(vibirka);
+            double[] otsynki = new double[vibirka.Count - 1];
+            for (int i = 0; i < vibirka[0].Count; i++)
+                Y[i, 0] = vibirka[vibirka.Count - 1][i];
+            vector = matrix.Multiple(matrix.InverseMatrix(matrix.Multiple(matrix.Transpose(X), X)),
+                matrix.Multiple(matrix.Transpose(X), Y));
+            for (int i = 0; i < otsynki.Length; i++)
+                otsynki[i] = vector[i, 0];
+            return otsynki;
+        }
+        public static double[] OtsVectorAplusA0(List<List<double>> vibirka)
+        {
+            List<List<double>> lstX = new List<List<double>>();
+            double[,]  vector, otsynki1 = new double[vibirka.Count, 1];
+            double[] otsynki = new double[vibirka.Count];
+                  for (int j = 0; j < vibirka.Count - 1; j++)
+                lstX.Add(vibirka[j]);
+            double[,] res1 = Peretvorennya.Usered(lstX),
+            res2 = matrix.Multiple(matrix.Transpose(res1), Peretvorennya.Usered(lstX)),
+            res3 = matrix.Multiple(matrix.InverseMatrix(res2), matrix.Transpose(Peretvorennya.Usered(lstX)));
+            vector = matrix.Multiple(res3, Peretvorennya.minSer(vibirka[vibirka.Count - 1]));
+            double sum = 0;
+            for (int i = 0; i < vibirka.Count - 1; i++)
+                sum += vector[i, 0] * PointMarks.sered_arif(vibirka[i]);
+            otsynki1[0, 0] = PointMarks.sered_arif(vibirka[vibirka.Count - 1]) - sum;
+            for (int i = 1, k = 0; i < otsynki1.GetLength(0) && k < vector.GetLength(0); i++, k++)
+                otsynki1[i, 0] = vector[k, 0];
+            for (int i = 0; i < otsynki.Length; i++)
+                otsynki[i] = otsynki1[i, 0];
+            return otsynki;
+        }
+        public static double[] OtsVecror3n(List<List<double>> vibirka)
+        {
+            double[] otsynki = new double[vibirka.Count];
+            double[,] otsynki1 = new double[vibirka.Count, 1],
+                delt = new double[vibirka.Count, vibirka.Count],
+                delt0 = new double[vibirka.Count, vibirka.Count],
+                delt1 = new double[vibirka.Count, vibirka.Count],
+                delt2 = new double[vibirka.Count, vibirka.Count];
+            double a0, a1, a2, det;
+
+            delt[0, 0] = 1; delt[0, 1] = PointMarks.sered_arif(vibirka[0]); delt[1, 0] = delt[0, 1];
+            delt[0, 2] = PointMarks.sered_arif(vibirka[1]); delt[2, 0] = delt[0, 2];
+            delt[1, 1] = PointMarks.sered_arif(matrix.Merge(vibirka[0], vibirka[0]));
+            delt[1, 2] = PointMarks.sered_arif(matrix.Merge(vibirka[0], vibirka[1]));
+            delt[2, 1] = delt[1, 2]; delt[2, 2] = PointMarks.sered_arif(matrix.Merge(vibirka[1], vibirka[1]));
+
+            delt0[0, 0] = PointMarks.sered_arif(vibirka[2]); delt0[0, 1] = delt[0, 1];
+            delt0[0, 2] = delt[0, 2]; delt0[1, 0] = PointMarks.sered_arif(matrix.Merge(vibirka[2], vibirka[0]));
+            delt0[1, 1] = delt[1, 1]; delt0[1, 2] = delt[1, 2];
+            delt0[2, 0] = PointMarks.sered_arif(matrix.Merge(vibirka[2], vibirka[1]));
+            delt0[2, 1] = delt0[1, 2]; delt0[2, 2] = delt[2, 2];
+
+            delt1[0, 0] = 1; delt1[0, 1] = PointMarks.sered_arif(vibirka[2]); delt1[0, 2] = delt[0, 2];
+            delt1[1, 0] = delt[1, 0]; delt1[1, 1] = delt0[1, 0]; delt1[1, 2] = delt[1, 2];
+            delt1[2, 0] = delt1[0, 2]; delt1[2, 1] = delt0[2, 0]; delt1[2, 2] = delt[2, 2];
+
+            delt2[0, 0] = 1; delt2[0, 1] = delt[0, 1]; delt2[0, 2] = delt0[0, 0];
+            delt2[1, 0] = delt[1, 0]; delt2[1, 1] = delt[1, 1]; delt2[1, 2] = delt0[1, 0];
+            delt2[2, 0] = delt[2, 0]; delt2[2, 1] = delt[2, 1]; delt2[2, 2] = delt0[2, 0];
+            Matrix m = new Matrix(delt), m1 = new Matrix(delt0), m2 = new Matrix(delt1), m3 = new Matrix(delt2);
+            det = m.Determinant;
+            a0 = m1.Determinant / det;
+            a1 = m2.Determinant / det;
+            a2 = m3.Determinant / det;
+            otsynki1[0, 0] = a0; otsynki1[1, 0] = a1; otsynki1[2, 0] = a2;
+            for (int i = 0; i < otsynki.Length; i++)
+                otsynki[i] = otsynki1[i, 0];
+            return otsynki;
+        }
+        public static double R2(List<List<double>> vibirka, double[,] R)
+        {
+            return Math.Pow(CorellAnaliz.MnozhCoefCorrel(R, vibirka.Count - 1), 2);
+        }
+        public static double Statf(List<List<double>> vibirka, double R2)
+        {
+            double N = vibirka[0].Count, n = vibirka.Count - 1;
+            return ((N - n - 1) / n) * ((1f / (1 - R2)) - 1);
+        }
+        public static bool ZnReg(double f, double alp, double v1, double v2)
+        {
+            if (f > kvantil.Fisher(alp, v1, v2))
+                return true;
+            else return true;
+        }
+        public static double[,] Cmatrix(double[,] X)
+        {
+            double[,] Cmatrix = matrix.InverseMatrix(matrix.Multiple(matrix.Transpose(X), X));
+            return Cmatrix;
+        }
+        public static double sigm2(List<List<double>> vibirka, double[,] R)
+        {
+            double N = vibirka[0].Count, n = vibirka.Count - 1,
+                sigm2y = PointMarks.dispersion(vibirka[vibirka.Count - 1]),
+                mnozh = CorellAnaliz.MnozhCoefCorrel(R, vibirka.Count - 1);
+            return ((N - 1) * sigm2y * (1 - mnozh)) / (N - n);
+        }
+        public static double Szal2(List<List<double>> vibirka, double[] a)
+        {
+            double[] Y = new double[vibirka[0].Count], el = new double[vibirka[0].Count];
+            for (int i = 0; i < vibirka[0].Count; i++)
+                Y[i] = vibirka[vibirka.Count - 1][i];
+            double[,] X = BVRegres.Xmatix(vibirka);
+            double sum,N=vibirka[0].Count,n=vibirka.Count-1;
+            for (int i = 0; i < el.Length; i++)
+            {
+                 sum = 0;
+                for (int j = 0, k = 1; j < X.GetLength(1); j++, k++)
+                {
+                    sum += a[k] * X[i, j];
+                }
+                el[i] = Math.Pow(Y[i] - a[0] - sum,2);
+            }
+            sum = 0;
+            for (int i = 0; i < el.Length; i++)
+                sum += el[i];
+            return sum/(N-n);
+        }
+        public static double[] StatZnach(double[] a, List<List<double>> vibirka, double sigm)
+        {
+            double[,] C = Cmatrix(Xmatix(vibirka));
+            double[] t = new double[a.Length - 1];
+            for (int i = 0, k = 1; i < t.Length; i++, k++)
+                t[i] = a[k] / (sigm * Math.Sqrt(C[i, i]));
+            return t;
+        }
+        public static double[] StatTochn(double[] otsa, double [] a, List<List<double>> vibirka, double sigm)
+        {
+            double[,] C = Cmatrix(Xmatix(vibirka));
+            double[] t = new double[otsa.Length - 1];
+            for (int i = 0, k = 1; i < t.Length; i++, k++)
+                t[i] = (otsa[k] - a[k]) / (sigm * Math.Sqrt(Math.Abs(C[i, i])));
+            return t;
+        }
+        public static bool[] TtestZnach(double[] t, double alp, double v)
+        {
+            bool[] res = new bool[t.Length];
+            for (int i = 0; i < t.Length; i++)
+                if (Math.Abs(t[i]) <= kvantil.Student(alp / 2, v))
+                    res[i] = false;
+                else res[i] = true;
+            return res;
+        }
+        public static bool[] TtestTochn(double[] t, double alp, double v)
+        {
+            bool[] res = new bool[t.Length];
+            for (int i = 0; i < t.Length; i++)
+                if (Math.Abs(t[i]) <= kvantil.Student(alp / 2, v))
+                    res[i] = true;
+                else res[i] = false;
+            return res;
+        }
+        public static double[] IntOtParam(List<List<double>> vibirka, double[] a, bool nizhn, double alp, double sigm)
+        {
+            double N = vibirka[0].Count, n = vibirka.Count - 1;
+            double[,] C = Cmatrix(Xmatix(vibirka));
+            double[] interv = new double[a.Length - 1];
+            for (int i = 0, k = 1; i < interv.Length; i++, k++)
+            {
+                if (nizhn)
+                    interv[i] = a[k] - (kvantil.Student(alp / 2, N - n) * sigm * Math.Sqrt( Math.Abs(C[i, i])));
+                else interv[i] = a[k] + (kvantil.Student(alp / 2, N - n) * sigm * Math.Sqrt(Math.Abs(C[i, i])));
+            }
+            return interv;
+        }
+        public static double IntOtZalDisp(List<List<double>> vibirka, double sigm2, bool nizhn, double alp)
+        {
+            double alp1 = (1 + (1 - alp)) / 2f, alp2 = (1 - (1 - alp)) / 2f,
+             N = vibirka[0].Count, n = vibirka.Count - 1;
+            if (nizhn)
+                return (sigm2 * (N - n)) / (kvantil.Pirs(alp2, (N - n)));
+            else return (sigm2 * (N - n)) / (kvantil.Pirs(alp1, (N - n)));
+        }
+        public static double[] StandOts(double[] a, List<List<double>> vibirka)
+        {
+            double[] standa = new double[a.Length - 1];
+            double sigmy = PointMarks.seredkvadrvid(vibirka[vibirka.Count - 1]);
+            for (int i = 0, k = 1; i < standa.Length; i++, k++)
+                standa[i] = Math.Abs((a[k] * PointMarks.seredkvadrvid(vibirka[i])) / sigmy);
+            return standa;
+        }
+     }
+}
