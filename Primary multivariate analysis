@@ -1,0 +1,68 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+namespace LabWork
+{
+    class BVPervAn
+    {
+        public static double[,] DCMatrix(List<double> Sigm, List<List<double>> r)
+        {
+            double[,] DC = new double[Sigm.Count, Sigm.Count];
+            for (int i = 0; i < Sigm.Count; i++)
+                for (int j = 0; j < Sigm.Count; j++)
+                {
+                    if (i == j)
+                        DC[i, j] = Math.Pow(Sigm[i], 2);
+                    else
+                        DC[i, j] = Sigm[i] * Sigm[j] * r[i][j];
+                }
+            return DC;
+        }
+        public static double[,] DCMatrix(double[] Sigm, double[,] r)
+        {
+            double[,] DC = new double[Sigm.Length, Sigm.Length];
+            for (int i = 0; i < Sigm.Length; i++)
+                for (int j = 0; j < Sigm.Length; j++)
+                {
+                    if (i == j)
+                        DC[i, j] = Math.Pow(Sigm[i], 2);
+                    else
+                        DC[i, j] = Sigm[i] * Sigm[j] * r[i, j];
+                }
+            return DC;
+        }
+        public static double[,] CorMatrix(List<List<double>> r)
+        {
+            double[,] Cor = new double[r[0].Count, r[0].Count];
+            for (int i = 0; i < r[0].Count; i++)
+                for (int j = 0; j < r[0].Count; j++)
+                {
+                    if (i == j)
+                        Cor[i, j] = 1;
+                    else
+                        Cor[i, j] = r[i][j];
+                }
+            return Cor;
+        }
+        public static double Perev_znach_Coef_Cor(double coef_cor, int N)
+        {
+            double t = (coef_cor * Math.Sqrt(N - 2f)) / Math.Sqrt(1f - Math.Pow(coef_cor, 2));
+            return t;
+        }
+        public static string[,] Znach(double[,] r, double kvant, int N)
+        {
+            string[,] arr = new string[r.GetLength(0), r.GetLength(1)];
+            for (int i = 0; i < r.GetLength(0); i++)
+                for (int j = 0; j < r.GetLength(1); j++)
+                {
+                    double t = Perev_znach_Coef_Cor(r[i, j], N);
+                    if (Math.Abs(t) <= kvant)
+                        arr[i, j] = "Не значущий";
+                    else arr[i, j] = "Значущий";
+                }
+            return arr;
+        }
+    }
+}
