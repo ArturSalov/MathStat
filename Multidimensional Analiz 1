@@ -1,0 +1,214 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using MatrixLib;
+namespace LabWork
+{
+    class BVPerevOdnor
+    {
+        static Kvantils kvantil = new Kvantils();
+        public static double StatV2Sered(List<List<List<double>>> Data)
+        {
+            double[,] S0 = S0ij(Data[0], Data[1]);
+            double[,] S1 = S1ij(Data[0], Data[1]);
+            var matrix1 = new Matrix(S0);
+            var matrix2 = new Matrix(S1);
+            double det1 = matrix1.Determinant,
+                det2 = matrix2.Determinant;
+            double chys = Math.Log(matrix2.Determinant / matrix1.Determinant),
+                res = -(Data[0][0].Count + Data[1][0].Count - 2 - (Data[0].Count / 2f)) * chys;
+              return -(Data[0][0].Count + Data[1][0].Count - 2 - (Data[0].Count / 2f)) * Math.Log(matrix2.Determinant / matrix1.Determinant);
+        }
+        public static bool TestPerev2Sered(double statv, double alp, int n)
+        {
+            if (statv <= kvantil.Pirs(alp, n))
+                return true;
+            else return false;
+        }
+        static double[,] S0ij(List<List<double>> x, List<List<double>> y)
+        {
+            double sum1 = 0, sum2 = 0, sum3 = 0, sum4 = 0, sum5 = 0, sum6 = 0;
+            int N1 = x[0].Count, N2 = y[0].Count;
+            double[,] s0ij = new double[x.Count, x.Count];
+            for (int i = 0; i < x.Count; i++)
+            {
+                for (int j = 0; j < x.Count; j++)
+                {
+                    for (int l = 0; l < N1; l++)
+                    {
+                        sum1 += x[i][l] * x[j][l];
+                        sum2 += x[i][l];
+                        sum3 += x[j][l];
+                    }
+                    for (int l = 0; l < N2; l++)
+                    {
+                        sum4 += y[i][l] * y[j][l];
+                        sum5 += y[i][l];
+                        sum6 += y[j][l];
+                    }
+                    s0ij[i, j] = (1f / (N1 + N2 - 2)) *
+                        (sum1 + sum4 - (((sum2 + sum5) * (sum3 + sum6)) / ((double) N1 + N2)));
+                }
+            }
+            return s0ij;
+        }
+        static double[,] S1ij(List<List<double>> x, List<List<double>> y)
+        {
+            double sum1 = 0, sum2 = 0, sum3 = 0, sum4 = 0, sum5 = 0, sum6 = 0;
+            int N1 = x[0].Count, N2 = y[0].Count;
+            double[,] s1ij = new double[x.Count, x.Count];
+            for (int i = 0; i < x.Count; i++)
+            {
+                for (int j = 0; j < x.Count; j++)
+                {
+                    for (int l = 0; l < N1; l++)
+                    {
+                        sum1 += x[i][l] * x[j][l];
+                        sum2 += x[i][l];
+                        sum3 += x[j][l];
+                    }
+                    for (int l = 0; l < N2; l++)
+                    {
+                        sum4 += y[i][l] * y[j][l];
+                        sum5 += y[i][l];
+                        sum6 += y[j][l];
+                    }
+                    s1ij[i, j] = (1f / (N1 + N2 - 2)) *
+                        (sum1 + sum4 - ((1f / N1) * sum2 * sum3) - ((sum5 * sum6) / (double)N2));
+                }
+            }
+            return s1ij;
+        }
+        public static double[] xser(List<List<double>> vibirka)
+        {
+            double[] ser = new double[vibirka.Count];
+            for (int i = 0; i < vibirka[0].Count; i++)
+            {
+                for (int j = 0; j < vibirka.Count; j++)
+                    ser[j] += vibirka[j][i];
+            }
+            for (int j = 0; j < vibirka.Count; j++)
+                ser[j] = ser[j] / vibirka[0].Count;
+            return ser;
+        }
+        public static double[,] Sd(List<List<double>> vibirka, double[] xser)
+        {
+            double[,] temp = new double[vibirka.Count, vibirka.Count],
+                res = new double[vibirka.Count, vibirka.Count],
+                m2 = new double[1, vibirka.Count],
+                m1 = new double[vibirka.Count, 1];
+            for (int i = 0; i < vibirka[0].Count; i++)
+            {
+                for (int j = 0; j < vibirka.Count; j++)
+                {
+                    m1[j, 0] = vibirka[j][i] - xser[j];
+                    m2[0, j] = vibirka[j][i] - xser[j];
+                }
+                temp = matrix.Multiple(m1, m2);
+                for (int k = 0; k < res.GetLength(0); k++)
+                    for (int j = 0; j < res.GetLength(1); j++)
+                        res[k, j] += temp[k, j];
+            }
+            for (int k = 0; k < res.GetLength(0); k++)
+                for (int j = 0; j < res.GetLength(1); j++)
+                    res[k, j] = res[k, j] / ((double)vibirka[0].Count - 1);
+            return res;
+        }
+        public static double[,] S(List<List<List<double>>> vibirka, List<double[,]> Sd)
+        {
+            int N = 0;
+            double[,] temp, res = new double[Sd[0].GetLength(0), Sd[0].GetLength(1)];
+            for (int k = 0; k < vibirka.Count; k++)
+            {
+                N += vibirka[k][0].Count;
+                for (int i = 0; i < Sd[k].GetLength(0); i++)
+                    for (int j = 0; j < Sd[k].GetLength(1); j++)
+                    {
+                        temp = new double[Sd[k].GetLength(0), Sd[k].GetLength(1)];
+                        temp[i, j] = (vibirka[k][0].Count - 1) * Sd[k][i, j];
+                        res[i, j] += temp[i, j];
+                    }
+            }
+            for (int i = 0; i < res.GetLength(0); i++)
+                for (int j = 0; j < res.GetLength(1); j++)
+                {
+                    res[i, j] = res[i, j] / ((double)N - vibirka.Count);
+                }
+            return res;
+        }
+        public static double StatVDC(List<List<List<double>>> vibirka)
+        {
+            List<double[,]> sd = new List<double[,]>();
+            for (int d = 0; d < vibirka.Count; d++)
+            {
+                double[] ser = xser(vibirka[d]);
+                double[,] temp = Sd(vibirka[d], ser);
+                sd.Add(temp);
+            }
+            double[,] s = S(vibirka, sd);
+            double sum = 0;
+            var matrix1 = new Matrix(s);
+            for (int d = 0; d < vibirka.Count; d++)
+            {
+                var matrix2 = new Matrix(sd[d]);
+                sum += ((vibirka[d][0].Count - 1) / 2f) * Math.Log(matrix1.Determinant / matrix2.Determinant);
+            }
+            return sum;
+        }
+        public static bool DCtest(double vstat, List<List<List<double>>> vibirka, double alp )
+        {
+            double v = (vibirka[0].Count * (vibirka[0].Count + 1) * (vibirka.Count - 1)) / 2f;
+            if (vstat <= kvantil.Pirs(alp, v))
+                return true;
+            else return false;
+        }
+        public static double StatVSeredk(List<List<List<double>>> vibirka)
+        {
+            List<double[]> Xser = new List<double[]>();
+            List<double[,]> sd = new List<double[,]>();
+            for (int i = 0; i < vibirka.Count; i++)
+            {
+                double[] xsr = xser(vibirka[i]);
+                Xser.Add(xsr);
+                double[,] temp = Sd(vibirka[i], xsr);
+                sd.Add(temp);
+            }
+            double[] zagser = Zagxser(vibirka, sd, Xser);
+            double res = 0;
+            for (int d = 0; d < vibirka.Count; d++)
+            {
+                double[] temp = matrix.Multiple(vibirka[d][0].Count, matrix.Sub(Xser[d], zagser)),
+                    temp1 = matrix.Multiple(temp, matrix.InverseMatrix(sd[d]));
+                res += matrix.Multiple(temp1, matrix.Sub(Xser[d], zagser));
+            }
+            return res;
+        }
+        public static double[] Zagxser(List<List<List<double>>> vibirka, List<double[,]> Sd, List<double[]> xser)
+        {
+            double[,] res1 = new double[vibirka[0].Count, vibirka[0].Count];
+            double[] res2 = new double[vibirka[0].Count],
+            Result = new double[vibirka[0].Count];
+            for (int d = 0; d < vibirka.Count; d++)
+            {
+                double[,] temp = matrix.Multiple(vibirka[d][0].Count, matrix.InverseMatrix(Sd[d]));
+                double[] temp1 = matrix.Multiple(temp, xser[d]);
+                for (int k = 0; k < res1.GetLength(0); k++)
+                    for (int j = 0; j < res1.GetLength(1); j++)
+                        res1[k, j] += temp[k, j];
+                for (int k = 0; k < res1.GetLength(0); k++)
+                    res2[k] += temp1[k];
+            }
+            Result = matrix.Multiple(matrix.InverseMatrix(res1), res2);
+            return Result;
+        }
+        public static bool kseredtest(double vstat, List<List<List<double>>> vibirka, double alp )
+        {
+            double v = (vibirka[0].Count * (vibirka.Count - 1));
+            if (vstat <= kvantil.Pirs(alp, v))
+                return true;
+            else return false;
+        }
+    }
+}
